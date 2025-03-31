@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.11
   - pandas
-  - numpy
+  - numpy=1.23.5
   - matplotlib
   - scikit-learn
   - statsmodels
@@ -17,4 +17,6 @@ dependencies:
   - spacy
   - textblob
   - jupyterlab
+  - seaborn
   - pip
+  - tensorflow==2.13
