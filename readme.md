@@ -2,92 +2,78 @@
 
 ## Overview
 
-This project aims to predict gold price movements using a diverse set of features and ultimately implement a trading strategy that can be backtested. The model will focus on predicting the difference between the opening price and the highest or lowest price of the day (whichever is larger). A Long Short-Term Memory (LSTM) neural network will be used to capture temporal dependencies in the data.
+This project aims to predict gold price movements using a diverse set of features and ultimately implement a trading strategy that can be backtested. The model focuses on predicting the difference between the opening price and the highest or lowest price of the day (whichever is larger). A Long Short-Term Memory (LSTM) neural network is used to capture temporal dependencies in the data.
 
 ## Project Structure
 
-  - **`src/data/`**: Contains scripts for fetching data (e.g., `bls_api.py`, `news_sentiment.py`) and consolidating it into a single dataset.
-  - **`data/raw/`**: Holds raw CSV files such as gold, oil, and DXY prices.
-  - **`data/external/`**: Contains external economic data (e.g., FEDFUNDS, GS10, M2REAL).
-  - **`data/processed/`**: Stores processed or partially cleaned data (e.g., `bls_data.csv`, `consolidated.csv`).
-  - **`notebooks/`**: Jupyter notebooks for data exploration and feature selection and engineering, data modelling and strategy implementation and backtesting.
+- **`src/data/`**: Contains subfolders and files of data sources and outputs
+- **`data/external/`**: Contains external economic data manually downloaded from FRED (e.g., FEDFUNDS, GS10, M2REAL).
+- **`data/processed/`**: Stores processed or partially cleaned data (e.g., `bls_data.csv`, `consolidated_data.csv`).
+- **`notebooks/`**: Jupyter notebooks for data exploration, feature selection/engineering, modeling, and strategy/backtesting.
+- **`src/`**: Contains scripts for fetching data (`bls_api.py`, `news_sentiment.py`)
 
-## Current Progress
+## Data Collection
 
-1. **Data Collection**
+- **Gold, Oil, and DXY Prices**: Fetched daily data using `yfinance`.
+- **Economic Indices**: Downloaded monthly data from the Bureau of Labor Statistics (BLS) using its API (CPI, Unemployment Rate, PPI, NFP. see `bls_api.py`).
+- **News Sentiment**: Tried connecting to AlphaVantage's API but the news sentiment feature is novel and is only providing 2 days of data (`news_sentiment.py` script).  
+- **Consolidation**:  
+  - Economic indices, which are monthly, are repeated daily within each month to align with the daily price data.  
+  - A consolidated CSV file (`consolidated.csv`) has been created by merging all data sources on a daily timeline.
+
+## How to Go Through the Project
+
+1. **Data Preparation**  
+   - Begin by joining the data in the `notebooks/` folder. Use `00_join_data.ipynb` and `01_data_preprocessing.ipynb` to see how raw data is combined and cleaned.
+
+2. **Feature Engineering & Selection**  
+   - Move on to `02_feature_selection.ipynb` to review how technical indicators (EMA, RSI, etc.) were created and to see the results of correlation analysis, mutual information, Recursive Feature Elimination (RFE) and Feature Importance using Random Forest (RF).  
+   - Three separate datasets (RFE, MI-based, RF-based) have been saved under `data/processed/` for later comparison.
+
+3. **Modeling**  
+   - Check out `03_modelling.ipynb` to observe the LSTM model implementation.  
+   - The model uses a 63 fixed window sequence to capture market movement and patterns per quarter, and ultimately predict next-day movements
+
+4. **Strategy & Backtesting**  
+   - Review `04_backtesting.ipynb` to explore various attempts to implement a trading strategy using the model's predictions.  
+   - This notebook includes integration with the backtesting library.
+
+## Model Performance Results
+
+- **Initial LSTM Findings:**  
+  - The LSTM model initially predicted near-zero values across different feature sets, indicating that the model is converging to the mean target instead of capturing meaningful variability.
+  - Preliminary metrics (e.g., RMSE and MAE) reflect that the model’s current performance does not fully capture next-day price dynamics.
+
+## Strategy Results and Takeaways
+
+- **Strategy Backtesting Integration:**  
+  - We implemented a backtesting module using a dedicated library, allowing us to simulate the trading strategy on our predicted data.
+  - The strategy was designed to take trades based on the model’s predictions (targeting 70% of the predicted move with predefined stop loss and take profit levels).
+
+- **Key Metrics Observed:**  
+  - Relevant metrics such as the number of trades, win rate, market exposure, maximum drawdown, etc., were tracked.
   
-  - **Gold, Oil, and DXY Prices**: Fetched daily data using `yfinance`.
-  
-  - **Economic Indices**: Downloaded monthly data from the Bureau of Labor Statistics (BLS) and the Federal Reserve Economic Data (FRED)
-  
-    - BLS
-      - Consumer Price Index (CPI)
-      - The unemployment rate for the civilian labor force (NFP)
-      - Producer Price Index (PPI)
-      
-    - FRED
-      - The effective Federal Funds Rate (FEDFUNDS)
-      - The 10-Year Treasury Constant Maturity Rate (GS10)
-      - Real M2 Money Stock—a measure of the money supply adjusted for inflation (M2REAL)
-
-  - **Consolidation**:  
-    - Economic indices, which are monthly, are repeated daily within each month to align with the daily price data.  
-    - A consolidated CSV file (`consolidated_data.csv`) has been created by merging all data sources on a daily timeline.
-
-2. **Data Wrangling**
-  
-  - Created a Jupyter notebook (join_data.ipynb):
-  
-    - Loads all CSV files (gold, oil, DXY, FRED and BLS data).
-    - Converts relevant columns to `datetime`.
-    - Uses `merge_asof` to combine daily market data with monthly economic indices.
-    - Pivots BLS data so each `seriesID` becomes its own column.
-    - Produced a final consolidated dataset ready for modeling.
-
-3. **Feature Selection & Engineering**
-  
-  - **Analysis:**  
-    - Performed correlation analysis, mutual information, and Recursive Feature Elimination (RFE) to determine the most informative features.
-
-  - **Created technical indicators:**  
-    - Technical indicators were created from the available data (EMA of 21 and 200 periods, RSI of 14 periods, etc) for capturing market trends.
-
-  - **Selected Feature Sets:**  
-    - Saved three different datasets (RFE, MI-based, and RF-based) for later comparison during the modeling phase.
-
-4. **Modeling**
-  
-  - **Initial LSTM Implementation:**  
-    - Built an LSTM model to predict the target.
-    - Created sequences with a fixed window.
-    - Encountered flat predictions (near zero) for all feature sets—indicating that the model is currently not capturing the variability in the target.
-
-### Current Limitations
-  
-  - **Flat Predictions:**  
-    - The current LSTM model is producing constant predictions across all feature sets.
-    
-  - **Seasonality & Train-Test Split:**  
-    - The training and test sets have not yet been updated to capture seasonal patterns (i.e., using the first 6 years for training and the last 2 years for testing).
+- **Challenges Encountered:**  
+  - Although the raw backtest results appear positive, the execution and entry timing of trades were not implemented as expected.
+  - Different methods, calculations, and entry types were tested, but none of them returned the results anticipated by the strategy design.  
+  - This indicates that further refinements in terms of parameters and strategy logic are needed before the approach can be fully validated.
 
 ## Next Steps
 
-1. **Update Train-Test Split for Seasonality:**  
-  - Revise the data preparation phase to split the dataset into 6 years for training and 2 years for testing. This will help capture seasonal trends.
-  
-2. **Model Refinement:**  
-  - Experiment with scaling or transforming the target variable.
-  - Adjust the LSTM architecture (e.g., increase layers/units, tune hyperparameters) to improve learning.
-  - Consider additional or alternative feature engineering strategies.
-  
+1. **Implement Time Series Cross-Validation:**  
+   - Explore using `TimeSeriesSplit` to perform cross-validation across multiple temporal folds. This will help to robustly evaluate model performance and better capture temporal variability in the data.
+
+2. **Refine the Model:**  
+   - Adjust the LSTM architecture (e.g., adding more layers/units, tuning hyperparameters) to improve learning.
+   - Explore additional feature engineering strategies.
+
 3. **Feature Set Comparison:**  
-  - Evaluate performance across the three saved datasets (RFE, MI-based, RF-based) to determine which feature set yields the best predictive performance.
-  
-4. **Validation & Backtesting:**  
-  - Once the model begins to capture non-flat predictions, integrate backtesting for the trading strategy targeting 70% of the predicted move.
+   - Evaluate the performance across different feature sets (RFE, MI-based, RF-based) to determine which one yields the best results.
+
+4. **Backtesting Validation:**  
+   - Refine the strategy implementation to ensure trades are executed at the intended times (e.g., at the next candle’s open).
 
 ## Requirements
 
 - Python 3.11+
-- Key libraries: `pandas`, `numpy`, `requests`, `yfinance`, `matplotlib`, etc.
-- (Future) `tensorflow` or `pytorch` for LSTM modeling and `backtrader`
+- Key libraries: `pandas`, `numpy`, `requests`, `yfinance`, `matplotlib`, `tensorflow`, `backtesting`, `scikit-learn`

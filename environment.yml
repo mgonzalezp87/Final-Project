@@ -7,16 +7,12 @@ dependencies:
   - numpy=1.23.5
   - matplotlib
   - scikit-learn
-  - statsmodels
   - xgboost
-  - lightgbm
   - yfinance
   - requests
-  - beautifulsoup4
-  - nltk
-  - spacy
-  - textblob
   - jupyterlab
   - seaborn
-  - pip
   - tensorflow==2.13
+  - backtesting
+  - json
+  - requests
